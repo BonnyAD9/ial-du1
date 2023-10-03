@@ -169,6 +169,7 @@ void Stack_Pop( Stack *stack ) {
 void Stack_Push( Stack *stack, char data ) {
 	if (Stack_IsFull(stack)) {
 		Stack_Error(SERR_PUSH);
+		return;
 	}
 
 	stack->array[++stack->topIndex] = data;

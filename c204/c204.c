@@ -34,7 +34,7 @@
 #include "c204.h"
 
 #include <limits.h>
-#include <string.h>
+#include <ctype.h>
 
 bool solved;
 
@@ -68,7 +68,7 @@ void untilLeftPar( Stack *stack, char *postfixExpression, unsigned *postfixExpre
 	}
 }
 
-int getPriority(char c) {
+int getPrecedence(char c) {
 	switch (c) {
 	case '+':
 	case '-':
@@ -79,12 +79,6 @@ int getPriority(char c) {
 	}
 	return 0;
 }
-
-typedef enum {
-	T_EOF = 0,
-	T_OTHER = 256,
-	T_OPERATOR,
-} TokenType;
 
 /**
  * Pomocná funkce doOperation.
@@ -117,15 +111,14 @@ void doOperation( Stack *stack, char c, char *postfixExpression, unsigned *postf
 	}
 
 	char res;
-	if (getPriority(c) > getPriority(top)) {
+	if (getPrecedence(c) > getPrecedence(top)) {
 		res = c;
 	} else {
-		res = top;
 		Stack_Pop(stack);
-		Stack_Push(stack, c);
+		postfixExpression[++*postfixExpressionLength] = top;
 	}
 
-	postfixExpression[++*postfixExpressionLength] = res;
+	Stack_Push(stack, c);
 }
 
 /**
@@ -184,7 +177,11 @@ char *infix2postfix( const char *infixExpression ) {
 	unsigned i = UINT_MAX;
 
 	Stack stack;
+	error_flag = false;
 	Stack_Init(&stack);
+	if (error_flag) {
+		return NULL;
+	}
 
 	char cur = *infixExpression++;
 
@@ -231,7 +228,10 @@ char *infix2postfix( const char *infixExpression ) {
  * @param value hodnota k vložení na zásobník
  */
 void expr_value_push( Stack *stack, int value ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	char *arr = (char *)&value;
+	for (size_t i = 0; i < sizeof(value); ++i) {
+		Stack_Push(stack, arr[i]);
+	}
 }
 
 /**
@@ -247,10 +247,49 @@ void expr_value_push( Stack *stack, int value ) {
  *   výsledné celočíselné hodnoty z vrcholu zásobníku
  */
 void expr_value_pop( Stack *stack, int *value ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
-	*value = 0;
+	char *arr = (char *)value;
+	for (size_t i = sizeof(*value); i > 0; --i) {
+		Stack_Top(stack, arr + i - 1);
+		Stack_Pop(stack);
+	}
 }
 
+int getVariable(VariableValue *values, size_t valueLen, char name) {
+	for (; valueLen--; ++values) {
+		if (values->name == name) {
+			return values->value;
+		}
+	}
+	return 0;
+}
+
+void calculate(Stack *stack, char operator) {
+	int a, b;
+	expr_value_pop(stack, &b);
+	expr_value_pop(stack, &a);
+
+	int res;
+	switch (operator)
+	{
+	case '+':
+		res = a + b;
+		break;
+	case '-':
+		res = a - b;
+		break;
+	case '*':
+		res = a * b;
+		break;
+	case '/':
+		res = a / b;
+		break;
+	default:
+		res = 0;
+		break;
+	}
+
+	expr_value_push(stack, res);
+}
 
 /**
  * Tato metoda provede vyhodnocení výrazu zadaném v `infixExpression`,
@@ -275,8 +314,44 @@ void expr_value_pop( Stack *stack, int *value ) {
  * @return výsledek vyhodnocení daného výrazu na základě poskytnutých hodnot proměnných
  */
 bool eval( const char *infixExpression, VariableValue variableValues[], int variableValueCount, int *value ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
-	return NULL;
+	char *pfix = infix2postfix(infixExpression);
+	if (!pfix) {
+		return false;
+	}
+
+	Stack stack;
+	error_flag = false;
+	Stack_Init(&stack);
+	if (error_flag) {
+		return false;
+	}
+
+	char *arr = pfix - 1;
+	while (*++arr && *arr != '=') {
+		if (isdigit(*arr)) {
+			expr_value_push(&stack, *arr - '0');
+			continue;
+		}
+
+		switch (*arr) {
+		case '+':
+		case '-':
+		case '*':
+		case '/':
+			calculate(&stack, *arr);
+			continue;
+		default:
+			expr_value_push(&stack, getVariable(variableValues, variableValueCount, *arr));
+			continue;
+		}
+	}
+
+	expr_value_pop(&stack, value);
+
+	free(pfix);
+	Stack_Dispose(&stack);
+
+	return true;
 }
 
 /* Konec c204.c */

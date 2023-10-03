@@ -3,8 +3,8 @@ TESTS=$(PROJECT)-test $(PROJECT)-test-advanced
 TEST_OUTPUTS=$(PROJECT)-test.out $(PROJECT)-test-advanced.out
 PROG=$(PROJECT)-test
 C202_DEPENDENCY=../c202/c202.c
-CC=cc
-CFLAGS=-std=c99 -Wall -Wextra -pedantic -lm -fcommon -g -fsanitize=address
+CC=gcc
+CFLAGS=-std=c99 -Wall -Wextra -pedantic -lm -fcommon
 SHELL=bash
 
 .PHONY: all run tests clean purge
