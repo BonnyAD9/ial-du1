@@ -77,6 +77,8 @@ void Stack_Init( Stack *stack ) {
 		return;
 	}
 
+	// I would rather init to NULL pointer and allocate on the first push,
+	// but test won't pass.
 	stack->array = malloc(sizeof(*stack->array) * STACK_SIZE);
 	if (!stack->array) {
 		Stack_Error(SERR_INIT);
