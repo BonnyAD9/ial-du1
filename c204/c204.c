@@ -58,16 +58,22 @@ bool solved;
  */
 void untilLeftPar( Stack *stack, char *postfixExpression, unsigned *postfixExpressionLength ) {
 	char c;
+	// pop until stack is empty or there is '('
 	while (!Stack_IsEmpty(stack)) {
 		Stack_Top(stack, &c);
 		Stack_Pop(stack);
+
+		// don't add '(' to the result
 		if (c == '(') {
 			return;
 		}
-		postfixExpression[++*postfixExpressionLength] = c;
+
+		postfixExpression[(*postfixExpressionLength)++] = c;
 	}
 }
 
+/// Returns the precedence of the oprator or 0 if it is unknown.
+/// (higher precedence - evaluates first)
 int getPrecedence(char c) {
 	switch (c) {
 	case '+':
@@ -97,27 +103,21 @@ int getPrecedence(char c) {
  * @param postfixExpressionLength Ukazatel na aktuální délku výsledného postfixového výrazu
  */
 void doOperation( Stack *stack, char c, char *postfixExpression, unsigned *postfixExpressionLength ) {
-	if (Stack_IsEmpty(stack)) {
-		Stack_Push(stack, c);
-		return;
+	char top = 0;
+	if (!Stack_IsEmpty(stack)) {
+		Stack_Top(stack, &top);
 	}
 
-	char top;
-	Stack_Top(stack, &top);
-
-	if (top == '(') {
-		Stack_Push(stack, c);
-		return;
-	}
-
-	char res;
-	if (getPrecedence(c) > getPrecedence(top)) {
-		res = c;
-	} else {
+	// In case that the stack is empty or the top value is '(', getPrecedence
+	// will return 0 and this condition will not pass, because `c` is always
+	// operator so the precedence is > 0
+	if (getPrecedence(c) <= getPrecedence(top)) {
+		// Add the top operator from the stack only when it has higher precedence
 		Stack_Pop(stack);
-		postfixExpression[++*postfixExpressionLength] = top;
+		postfixExpression[(*postfixExpressionLength)++] = top;
 	}
 
+	// Always push the current operator
 	Stack_Push(stack, c);
 }
 
@@ -174,8 +174,9 @@ char *infix2postfix( const char *infixExpression ) {
 	if (!res) {
 		return NULL;
 	}
-	unsigned i = UINT_MAX;
+	unsigned i = 0;
 
+	// The stack contains only operators and '('
 	Stack stack;
 	error_flag = false;
 	Stack_Init(&stack);
@@ -183,13 +184,16 @@ char *infix2postfix( const char *infixExpression ) {
 		return NULL;
 	}
 
-	char cur = *infixExpression++;
+	// Cur points to the current char. At the start there is no current
+	// char, so it points to the one before (the first value doesn't have to
+	// point to valid location because it is never dereferenced)
+	const char *cur = infixExpression - 1;
 
-	while (cur != 0 && cur != '=') {
-		switch (cur)
+	while (*++cur && *cur != '=') {
+		switch (*cur)
 		{
 		case '(':
-			Stack_Push(&stack, cur);
+			Stack_Push(&stack, *cur);
 			break;
 		case ')':
 			untilLeftPar(&stack, res, &i);
@@ -198,18 +202,19 @@ char *infix2postfix( const char *infixExpression ) {
 		case '-':
 		case '*':
 		case '/':
-			doOperation(&stack, cur, res, &i);
+			doOperation(&stack, *cur, res, &i);
 			break;
 		default:
-			res[++i] = cur;
+			res[i++] = *cur;
 			break;
 		}
-		cur = *infixExpression++;
 	}
 
+	// Finish up
 	untilLeftPar(&stack, res, &i);
-	res[++i] = '=';
-	res[++i] = 0;
+	res[i++] = '=';
+	res[i++] = 0;
+
 	Stack_Dispose(&stack);
 
 	return res;
@@ -254,7 +259,10 @@ void expr_value_pop( Stack *stack, int *value ) {
 	}
 }
 
+/// Gets the value of the given variable. Finds it in the array.
+/// When there is no variable with that name, returns 0.
 int getVariable(VariableValue *values, size_t valueLen, char name) {
+	// Sequentialy search in the array
 	for (; valueLen--; ++values) {
 		if (values->name == name) {
 			return values->value;
@@ -263,8 +271,11 @@ int getVariable(VariableValue *values, size_t valueLen, char name) {
 	return 0;
 }
 
+/// Performs the operation of the given operator on the two values on the top
+/// of the stack (pops the values), and pushes the result to the stack.
 void calculate(Stack *stack, char operator) {
 	int a, b;
+	// The values are in reverse on the stack
 	expr_value_pop(stack, &b);
 	expr_value_pop(stack, &a);
 
@@ -319,6 +330,8 @@ bool eval( const char *infixExpression, VariableValue variableValues[], int vari
 		return false;
 	}
 
+	// The stack contains int values, at the end of the function, it should
+	// contain only one value.
 	Stack stack;
 	error_flag = false;
 	Stack_Init(&stack);
@@ -326,8 +339,12 @@ bool eval( const char *infixExpression, VariableValue variableValues[], int vari
 		return false;
 	}
 
+	// arr points to the current char, at the start there is no current char
+	// so it points to the value before (the first value doesn't have to point
+	// to valid location because it is never dereferenced)
 	char *arr = pfix - 1;
 	while (*++arr && *arr != '=') {
+		// push all literal values
 		if (isdigit(*arr)) {
 			expr_value_push(&stack, *arr - '0');
 			continue;
@@ -346,8 +363,10 @@ bool eval( const char *infixExpression, VariableValue variableValues[], int vari
 		}
 	}
 
+	// the only remaining value on the stack is the result
 	expr_value_pop(&stack, value);
 
+	// finish up
 	free(pfix);
 	Stack_Dispose(&stack);
 
