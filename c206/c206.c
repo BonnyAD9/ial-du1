@@ -124,12 +124,11 @@ void DLL_InsertFirst( DLList *list, int data ) {
 	h->nextElement = list->firstElement;
 	h->previousElement = NULL;
 
-	// TODO: fix
-
 	if (list->firstElement) {
 		list->firstElement->previousElement = h;
-		list->firstElement = h;
 		return;
+	} else {
+		list->lastElement = h;
 	}
 
 	list->firstElement = h;
@@ -151,18 +150,17 @@ void DLL_InsertLast( DLList *list, int data ) {
 	}
 
 	h->data = data;
-	h->nextElement = list->lastElement;
-	h->previousElement = NULL;
-
-	// TODO: fix
+	h->previousElement = list->lastElement;
+	h->nextElement = NULL;
 
 	if (list->lastElement) {
-		list->lastElement->previousElement = h;
-		list->lastElement = h;
+		list->lastElement->nextElement = h;
 		return;
+	} else {
+		list->firstElement = h;
 	}
 
-	list->firstElement = h;
+	list->lastElement = h;
 }
 
 /**
