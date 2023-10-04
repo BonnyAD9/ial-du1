@@ -126,7 +126,6 @@ void DLL_InsertFirst( DLList *list, int data ) {
 
 	if (list->firstElement) {
 		list->firstElement->previousElement = h;
-		return;
 	} else {
 		list->lastElement = h;
 	}
@@ -155,7 +154,6 @@ void DLL_InsertLast( DLList *list, int data ) {
 
 	if (list->lastElement) {
 		list->lastElement->nextElement = h;
-		return;
 	} else {
 		list->firstElement = h;
 	}
@@ -225,20 +223,27 @@ void DLL_GetLast( DLList *list, int *dataPtr ) {
  * @param list Ukazatel na inicializovanou strukturu dvousměrně vázaného seznamu
  */
 void DLL_DeleteFirst( DLList *list ) {
-	if (!list->firstElement) {
+	DLLElementPtr first = list->firstElement;
+
+	if (!first) {
 		return;
 	}
 
-	if (list->activeElement == list->firstElement) {
+	if (list->activeElement == first) {
 		list->activeElement = NULL;
 	}
 
-	if (list->lastElement == list->firstElement) {
+	if (list->lastElement == first) {
 		list->lastElement = NULL;
 	}
 
-	free(list->firstElement);
-	list->firstElement = NULL;
+	if (first->nextElement) {
+		first->nextElement->previousElement = NULL;
+	}
+
+	list->firstElement = first->nextElement;
+
+	free(first);
 }
 
 /**
@@ -249,20 +254,27 @@ void DLL_DeleteFirst( DLList *list ) {
  * @param list Ukazatel na inicializovanou strukturu dvousměrně vázaného seznamu
  */
 void DLL_DeleteLast( DLList *list ) {
-	if (!list->lastElement) {
+	DLLElementPtr last = list->lastElement;
+
+	if (!last) {
 		return;
 	}
 
-	if (list->activeElement == list->lastElement) {
+	if (list->activeElement == last) {
 		list->activeElement = NULL;
 	}
 
-	if (list->lastElement == list->firstElement) {
+	if (list->firstElement == last) {
 		list->firstElement = NULL;
 	}
 
-	free(list->lastElement);
-	list->lastElement = NULL;
+	if (last->previousElement) {
+		last->previousElement->nextElement = NULL;
+	}
+
+	list->lastElement = last->previousElement;
+
+	free(last);
 }
 
 /**
