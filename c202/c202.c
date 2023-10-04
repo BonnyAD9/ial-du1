@@ -185,11 +185,8 @@ void Stack_Push( Stack *stack, char data ) {
  * @param stack Ukazatel na inicializovanou strukturu zásobníku
  */
 void Stack_Dispose( Stack *stack ) {
-	// Nejde splnit zadání tak aby testy prošly:
-	//
-	// Nejde zároveň uvolnit paměť a uvést zásobník do prázdného stavu
-	// protože testy nedovolují aby inicializovaný prázdný zásobník měl
-	// `stack->array` nastaveno na `NULL`.
+	// Cannot satisfy free the array and have the stack in empty state because
+	// NULL is uninitialized state according to the tests.
 	free(stack->array);
 	stack->topIndex = -1;
 	stack->array = NULL;

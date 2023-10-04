@@ -114,22 +114,27 @@ void DLL_Dispose( DLList *list ) {
  * @param data Hodnota k vložení na začátek seznamu
  */
 void DLL_InsertFirst( DLList *list, int data ) {
+	// Craete the element
 	DLLElementPtr h = malloc(sizeof(*h));
 	if (!h) {
 		DLL_Error();
 		return;
 	}
 
+	// Set the data of the new element
 	h->data = data;
 	h->nextElement = list->firstElement;
 	h->previousElement = NULL;
 
+	// Set previous of next
 	if (list->firstElement) {
 		list->firstElement->previousElement = h;
 	} else {
+		// This is the first element
 		list->lastElement = h;
 	}
 
+	// add it to the first position element
 	list->firstElement = h;
 }
 
@@ -142,22 +147,27 @@ void DLL_InsertFirst( DLList *list, int data ) {
  * @param data Hodnota k vložení na konec seznamu
  */
 void DLL_InsertLast( DLList *list, int data ) {
+	// Create the element
 	DLLElementPtr h = malloc(sizeof(*h));
 	if (!h) {
 		DLL_Error();
 		return;
 	}
 
+	// set the data of the new element
 	h->data = data;
 	h->previousElement = list->lastElement;
 	h->nextElement = NULL;
 
+	// set next of previous
 	if (list->lastElement) {
 		list->lastElement->nextElement = h;
 	} else {
+		// the list is empty, this is the first element
 		list->firstElement = h;
 	}
 
+	// set the last element
 	list->lastElement = h;
 }
 
@@ -229,18 +239,20 @@ void DLL_DeleteFirst( DLList *list ) {
 		return;
 	}
 
+	// if the removed element is active, deactivate
 	if (list->activeElement == first) {
 		list->activeElement = NULL;
 	}
 
+	// if this is the only element set last to null
 	if (list->lastElement == first) {
 		list->lastElement = NULL;
-	}
-
-	if (first->nextElement) {
+	} else if (first->nextElement) {
+		// remove reference from the next element
 		first->nextElement->previousElement = NULL;
 	}
 
+	// set the new first element
 	list->firstElement = first->nextElement;
 
 	free(first);
@@ -260,18 +272,20 @@ void DLL_DeleteLast( DLList *list ) {
 		return;
 	}
 
+	// if the last element is active, deactivate it
 	if (list->activeElement == last) {
 		list->activeElement = NULL;
 	}
 
+	// if this is the only element, set first to null
 	if (list->firstElement == last) {
 		list->firstElement = NULL;
-	}
-
-	if (last->previousElement) {
+	} else if (last->previousElement) {
+		// remove reference from the next element
 		last->previousElement->nextElement = NULL;
 	}
 
+	// set the new last element
 	list->lastElement = last->previousElement;
 
 	free(last);
@@ -295,12 +309,14 @@ void DLL_DeleteAfter( DLList *list ) {
 		return;
 	}
 
+	// update the previous of next
 	if (next->nextElement) {
 		next->nextElement->previousElement = list->activeElement;
 	} else if (next == list->lastElement) {
 		list->lastElement = list->activeElement;
 	}
 
+	// set the next of active
 	list->activeElement->nextElement = next->nextElement;
 
 	free(next);
@@ -324,12 +340,14 @@ void DLL_DeleteBefore( DLList *list ) {
 		return;
 	}
 
+	// update the next of previous
 	if (prev->previousElement) {
 		prev->previousElement->nextElement = list->activeElement;
 	} else if (prev == list->firstElement) {
 		list->firstElement = list->activeElement;
 	}
 
+	// set the previous of active
 	list->activeElement->previousElement = prev->previousElement;
 
 	free(prev);
