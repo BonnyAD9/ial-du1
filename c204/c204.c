@@ -115,6 +115,11 @@ void doOperation( Stack *stack, char c, char *postfixExpression, unsigned *postf
 		// Add the top operator from the stack only when it has higher precedence
 		Stack_Pop(stack);
 		postfixExpression[(*postfixExpressionLength)++] = top;
+
+		// for special case such as a+b*c*d-e, where after pop the next
+		// operator on top should be inserted before this one
+		doOperation(stack, c, postfixExpression, postfixExpressionLength);
+		return;
 	}
 
 	// Always push the current operator
