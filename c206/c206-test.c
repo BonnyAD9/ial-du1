@@ -1,4 +1,4 @@
-/*
+/*ENDTEST
  *  Předmět: Algoritmy (IAL) - FIT VUT v Brně
  *  Základní testy pro příklad c206.c (Dvousměrně vázaný lineární seznam)
  *  Vytvořil: Martin Tuček, září 2005
