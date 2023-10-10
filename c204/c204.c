@@ -33,9 +33,6 @@
 
 #include "c204.h"
 
-#include <limits.h>
-#include <ctype.h>
-
 bool solved;
 
 /**
@@ -306,6 +303,13 @@ void calculate(Stack *stack, char operator) {
 
 	expr_value_push(stack, res);
 }
+
+/// Can't use the header ctype so I have my own implementation
+static int is_digit(int value) {
+	return value >= '0' && value <= '9';
+}
+
+#define isdigit(value) is_digit(value)
 
 /**
  * Tato metoda provede vyhodnocení výrazu zadaném v `infixExpression`,
