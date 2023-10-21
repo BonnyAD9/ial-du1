@@ -275,7 +275,7 @@ int getVariable(VariableValue *values, size_t valueLen, char name) {
 
 /// Performs the operation of the given operator on the two values on the top
 /// of the stack (pops the values), and pushes the result to the stack.
-void calculate(Stack *stack, char operator) {
+bool calculate(Stack *stack, char operator) {
 	int a, b;
 	// The values are in reverse on the stack
 	expr_value_pop(stack, &b);
@@ -294,6 +294,9 @@ void calculate(Stack *stack, char operator) {
 		res = a * b;
 		break;
 	case '/':
+		if (b == 0) {
+			return false;
+		}
 		res = a / b;
 		break;
 	default:
@@ -302,6 +305,7 @@ void calculate(Stack *stack, char operator) {
 	}
 
 	expr_value_push(stack, res);
+	return true;
 }
 
 /// Can't use the header ctype so I have my own implementation
@@ -364,12 +368,20 @@ bool eval( const char *infixExpression, VariableValue variableValues[], int vari
 		case '-':
 		case '*':
 		case '/':
-			calculate(&stack, *arr);
+			if (!calculate(&stack, *arr)) {
+				free(pfix);
+				Stack_Dispose(&stack);
+				return false;
+			}
 			continue;
 		default:
 			expr_value_push(&stack, getVariable(variableValues, variableValueCount, *arr));
 			continue;
 		}
+	}
+
+	if (*arr != '=') {
+		return false;
 	}
 
 	// the only remaining value on the stack is the result
